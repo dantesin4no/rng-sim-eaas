@@ -10,7 +10,7 @@ noise source → continuous health tests → SHA-256 conditioner → pool → HM
 | `packages/entropy-core` | `@entropy/core` | Physics, health tests, conditioner, pool, DRBG. UI-free, isomorphic (Node + browser). |
 | `services/entropy-api` | `@entropy/api` | HTTP service. Implements `contracts/entropy-api.yaml`. Zero deps beyond core. |
 | `packages/validation` | `@entropy/validation` | Statistical smoke tests for exported .bin files. |
-| `apps/dashboard` | — | Vite/React UI (currently self-contained; migration to consume the API is plan 003). |
+| `apps/dashboard` | — | Vite/React UI. Local sim plus a "Live service" panel that consumes the API (plan 003, done). |
 | `contracts/` | — | API contracts. **Source of truth. Never change code and contract in the same PR without saying so.** |
 | `plans/` | — | Written plans. Write the plan BEFORE the code; get it reviewed. |
 

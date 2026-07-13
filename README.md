@@ -47,7 +47,7 @@ Requires Node.js 18+ (repo verified on 22).
 npm install            # links workspaces; installs dashboard's vite/react
 npm test               # 36 tests: physics invariants, health trips, DRBG, e2e
 npm run start:api      # entropy service on http://localhost:8787
-npm run dev:dashboard  # the v2 UI (still self-contained; see plans/003)
+npm run dev:dashboard  # the v2 UI: local sim + Live service panel (plan 003)
 ```
 
 Try the service:
@@ -115,7 +115,7 @@ CLAUDE.md                     agent operating manual (conventions, loop rules)
   hooks/                      guard-bash.sh, test-gate.sh (deterministic enforcement)
   skills/                     entropy-validation, drbg-conventions (procedures)
   agents/                     crypto-reviewer, physics-engineer, api-engineer
-plans/                        written plans; 001-002 done, 003-004 open
+plans/                        written plans; 001-004 done, 005 (public demo API) in flight
 contracts/entropy-api.yaml    API source of truth — code follows contract
 packages/entropy-core/        physics + health + conditioner + pool + DRBG (+25 tests)
 packages/validation/          statistical smoke gate for .bin files
