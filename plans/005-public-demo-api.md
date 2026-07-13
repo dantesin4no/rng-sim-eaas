@@ -1,4 +1,4 @@
-# Plan 005 — Public demo API (make the Live service panel work on Pages)
+# Plan 005 — Public demo API (make the Live service panel work on Pages)  [DONE]
 
 ## Why
 
@@ -36,10 +36,17 @@ default URL. The contract is untouched.
        so a silently-dead panel can't ship twice. Connect stays a manual
        click — the demo must not auto-hammer a free-tier box on page load.
 3. [x] README: document the deploy, and be honest about cold starts.
-4. [ ] Verify against the *deployed* service, not localhost: preflight
-       (`OPTIONS`) returns the Pages origin, `/v1/health` is `ok`,
-       `/v1/random` returns bytes, and the 429 cap trips. Then drive the
-       hosted dashboard's Connect button.
+4. [x] Verify against the *deployed* service, not localhost — all passed
+       2026-07-13: preflight `OPTIONS /v1/random` → 204 with
+       `access-control-allow-origin: https://dantesin4no.github.io`;
+       `/v1/health` 200 healthy (pool 8192/8192, min-entropy ~7.75 b/B);
+       `/v1/random?bytes=64` returned bytes and moved the server's
+       `drbgBytesOut` counter by exactly 64; burst of `/v1/int` tripped 429
+       (`retry_after_ms` in body) at request 68 — >60 because the bucket
+       refills continuously. Deployed Pages bundle verified to contain the
+       Render URL. Caveat: the Connect button itself was exercised as the
+       exact requests the panel makes (same origin header, same endpoints),
+       not via a headless browser — same limitation plan 003 recorded.
 5. [x] Doc close-out folded in here: README layout line still said
        "003-004 open" and the dev-command comment still called the dashboard
        "self-contained"; CLAUDE.md's architecture map likewise. All three now
