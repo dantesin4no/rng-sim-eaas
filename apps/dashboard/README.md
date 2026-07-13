@@ -50,11 +50,12 @@ npm run preview   # serve the build locally
 Deploy `dist/` to any static host. Must be served over HTTPS in production —
 `crypto.subtle` is unavailable in insecure contexts.
 
-## Zero-build fallback
+## Zero-build option
 
-`standalone.html` is a single-file variant using React UMD + Babel from a CDN.
-Open it directly in a browser (needs internet for the three CDN scripts on
-first load). The Vite project above is the primary, recommended path.
+Use the [hosted demo](https://dantesin4no.github.io/rng-sim-eaas/) — it is
+this app, built and deployed from `main` on every merge. (A hand-maintained
+`standalone.html` CDN variant used to fill this role; it was retired once the
+hosted demo existed, because its inlined copy of the component kept drifting.)
 
 ## Testing the motion sensor (mobile)
 
@@ -95,7 +96,6 @@ pendulum-rng/
 ├── index.html                 # Vite entry
 ├── package.json
 ├── vite.config.js
-├── standalone.html            # no-build CDN variant
 └── src/
     ├── main.jsx               # mounts the app
     └── TriplePendulumRNG.jsx  # physics + entropy pipeline + UI (v2.0)
