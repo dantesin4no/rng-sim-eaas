@@ -1,0 +1,48 @@
+name: nightly-entropy-battery
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+jobs:
+  battery:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install
+      - name: Official NIST CAVP KATs (SHA-256 HMAC_DRBG)
+        run: |
+          curl -sfL -o HMAC_DRBG.rsp \
+            https://raw.githubusercontent.com/coruus/nist-testvectors/master/csrc.nist.gov/groups/STM/cavp/documents/drbg/drbgtestvectors/drbgvectors_pr_false/HMAC_DRBG.rsp
+          node packages/entropy-core/test/cavp-runner.mjs HMAC_DRBG.rsp SHA-256
+      - name: Boot service and draw 10 MB
+        run: |
+          node services/entropy-api/src/server.js & 
+          SVC=$!
+          for i in $(seq 1 120); do
+            curl -sf localhost:8787/v1/metrics | grep -q "drbg_ready 1" && break
+            sleep 1
+          done
+          # generous per-run limits for the battery draw
+          kill $SVC; RATE_BYTES_PER_MIN=999999999 RATE_REQ_PER_MIN=99999 node services/entropy-api/src/server.js &
+          SVC=$!
+          sleep 8
+          for i in $(seq 2560); do
+            curl -s "localhost:8787/v1/random?bytes=4096" \
+              | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>process.stdout.write(Buffer.from(JSON.parse(d).data,"hex")))'
+          done > sample.bin
+          kill $SVC
+          ls -la sample.bin
+      - name: Smoke gate
+        run: node packages/validation/src/check-bin.js sample.bin
+      - name: dieharder battery
+        run: |
+          sudo apt-get update && sudo apt-get install -y dieharder
+          dieharder -a -g 201 -f sample.bin | tee dieharder-report.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: entropy-battery-${{ github.run_id }}
+          path: |
+            sample.bin
+            dieharder-report.txt

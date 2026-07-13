@@ -1,0 +1,8 @@
+node_modules
+dist
+*.bin
+.git
+apps
+.claude
+plans
+*.zip

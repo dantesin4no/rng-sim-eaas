@@ -1,0 +1,79 @@
+openapi: 3.0.3
+info:
+  title: Entropy-as-a-Service API
+  version: 0.1.0
+  description: >
+    Random bytes from a chaotic triple-pendulum entropy source structured per
+    NIST SP 800-90A/B. All randomness is served from an HMAC-DRBG; raw and
+    pool bytes are never exposed. This file is the source of truth — code
+    follows contract.
+
+    CORS: the service emits Access-Control-Allow-Origin on all responses and
+    answers OPTIONS preflights with 204. The allowed origin is configured via
+    the CORS_ORIGIN env var (default http://localhost:5173, the dashboard dev
+    server). Use an explicit origin in production, never "*".
+
+    Rate limiting: byte-serving endpoints (/v1/random, /v1/int) are limited
+    per client IP with a token bucket — RATE_REQ_PER_MIN requests (default
+    120) and RATE_BYTES_PER_MIN output bytes (default 262144) per minute.
+    Exceeding either returns 429 with {error, retry_after_ms}.
+paths:
+  /v1/random:
+    get:
+      summary: Draw random bytes from the DRBG
+      parameters:
+        - name: bytes
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 4096, default: 32 }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [bytes, encoding, data]
+                properties:
+                  bytes: { type: integer }
+                  encoding: { type: string, enum: [hex] }
+                  data: { type: string, pattern: "^[0-9a-f]*$" }
+        "503":
+          description: DRBG unseeded or health failure. Body includes error and optional retry_after_ms.
+        "429":
+          description: Rate limit exceeded for this client IP. Body includes error and retry_after_ms.
+  /v1/int:
+    get:
+      summary: Unbiased integer in [0, max), rejection-sampled
+      parameters:
+        - name: max
+          in: query
+          schema: { type: integer, minimum: 2, maximum: 1000000000, default: 100 }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  max: { type: integer }
+                  value: { type: integer }
+        "503": { description: DRBG unseeded }
+        "429": { description: Rate limit exceeded }
+  /v1/health:
+    get:
+      summary: Source health and pipeline status
+      responses:
+        "200": { description: Healthy. Body is EntropySource.status(). }
+        "503": { description: Health-test failure (RCT/APT). Same body shape. }
+  /v1/metrics:
+    get:
+      summary: Prometheus-style plaintext metrics
+      responses:
+        "200": { content: { text/plain: {} } }
+  /v1/ambient:
+    post:
+      summary: Contribute ambient entropy (hex body, max 256 bytes)
+      requestBody:
+        content: { text/plain: { schema: { type: string } } }
+      responses:
+        "202": { description: Accepted; byte count echoed }
+        "400": { description: Non-hex body }

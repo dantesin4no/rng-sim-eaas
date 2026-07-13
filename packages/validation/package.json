@@ -1,0 +1,8 @@
+{
+  "name": "@entropy/validation",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "check": "node src/check-bin.js"
+  }
+}

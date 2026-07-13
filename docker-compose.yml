@@ -1,0 +1,10 @@
+services:
+  entropy-api:
+    build: .
+    ports:
+      - "8787:8787"
+    environment:
+      CORS_ORIGIN: http://localhost:5173
+      RATE_REQ_PER_MIN: "120"
+      RATE_BYTES_PER_MIN: "262144"
+    restart: unless-stopped

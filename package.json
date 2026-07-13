@@ -1,0 +1,15 @@
+{
+  "name": "entropy-service",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "apps/dashboard"
+  ],
+  "scripts": {
+    "test": "npm test -w @entropy/core && npm test -w @entropy/api",
+    "start:api": "npm run start -w @entropy/api",
+    "dev:dashboard": "npm run dev -w dashboard"
+  }
+}
