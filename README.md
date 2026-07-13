@@ -16,11 +16,20 @@ run continuously on the raw samples, and every coin flip, D20 roll, and 64 KB
 .bin export you pull comes out of the HMAC-DRBG at the end of the chain. Watch
 the pool fill and the min-entropy estimate settle in real time.
 
+The **Live service** panel in the demo talks to a real deployed backend: hit
+**Connect** and the page polls `GET /v1/health` on the hosted `@entropy/api`,
+draws coins/D20s/128-bit hex through `GET /v1/random` and `GET /v1/int`, and
+forwards your pointer and keyboard events into *the service's* entropy pool via
+`POST /v1/ambient` — your browser becomes one of its noise sources. So the demo
+exercises both paths: the whole pipeline client-side in the tab, and the same
+pipeline as a network service.
+
 Two caveats worth knowing before you click:
 
-- The **Live service** panel is the one thing the hosted demo can't do — it
-  talks to the entropy API on your own machine. Run `npm run start:api` and
-  use the dev server (below) to exercise that path.
+- The backend is a free-tier instance. If it has gone idle, the first
+  **Connect** can take a few seconds to wake, and `/v1/random` answers 503
+  while the pool is still crediting min-entropy — the panel shows this rather
+  than hiding it.
 - Must be served over HTTPS. `crypto.subtle` (the SHA-256 conditioner and
   HMAC-DRBG) does not exist in an insecure context, so the pipeline stalls at
   the conditioner if you open the page over plain HTTP.
@@ -74,6 +83,20 @@ Start the API, then `npm run dev -w dashboard`, open the dashboard, and hit
 the service, and forwards your pointer/keyboard/motion events into the
 service's entropy pool via POST /v1/ambient. CORS origin is configured with
 the CORS_ORIGIN env var (default: the Vite dev server).
+
+The hosted demo does the same thing against the deployed API
+(`render.yaml`, which sets CORS_ORIGIN to the Pages origin). The endpoint the
+Pages build ships with comes from the **`API_URL` repository variable**, injected
+as `VITE_API_URL` — it is deliberately *not* in the repo, so it is the one piece
+of config you cannot discover by reading the source:
+
+```
+gh variable set API_URL --body https://rng-sim-entropy-api.onrender.com
+```
+
+If it is unset, `pages.yml` fails the build on this repo rather than shipping a
+dashboard that silently points at the visitor's own localhost. Forks still build;
+their Live service panel renders as NOT CONFIGURED with the URL field editable.
 
 ## CI
 
