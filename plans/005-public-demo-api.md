@@ -25,19 +25,25 @@ default URL. The contract is untouched.
 
 ## Steps
 
-1. [ ] `render.yaml` blueprint: docker runtime against the existing
+1. [x] `render.yaml` blueprint: docker runtime against the existing
        `Dockerfile`, `healthCheckPath: /v1/health`, env for `CORS_ORIGIN` and
-       the rate-limit caps. Free plan.
-2. [ ] Dashboard default service URL becomes build-configurable
+       the rate-limit caps. Free plan. Deployed by hand from the dashboard
+       (Blueprints → connect repo): https://rng-sim-entropy-api.onrender.com
+2. [x] Dashboard default service URL becomes build-configurable
        (`VITE_API_URL`, falling back to `http://localhost:8787` so the local
        dev flow is unchanged). `pages.yml` passes the deployed URL at build
-       time. Connect stays a manual click — the demo must not auto-hammer a
-       free-tier box on page load.
-3. [ ] README: document the deploy, and be honest about cold starts.
+       time — and hard-fails on this repo if the `API_URL` variable is unset,
+       so a silently-dead panel can't ship twice. Connect stays a manual
+       click — the demo must not auto-hammer a free-tier box on page load.
+3. [x] README: document the deploy, and be honest about cold starts.
 4. [ ] Verify against the *deployed* service, not localhost: preflight
        (`OPTIONS`) returns the Pages origin, `/v1/health` is `ok`,
        `/v1/random` returns bytes, and the 429 cap trips. Then drive the
        hosted dashboard's Connect button.
+5. [x] Doc close-out folded in here: README layout line still said
+       "003-004 open" and the dev-command comment still called the dashboard
+       "self-contained"; CLAUDE.md's architecture map likewise. All three now
+       state plans 003/004 are done and the dashboard consumes the API.
 
 ## Acceptance criteria
 
@@ -57,3 +63,9 @@ default URL. The contract is untouched.
   bug, and must not be "fixed" by lowering the crediting ratio.
 - A public demo endpoint is not a production entropy service. It remains an
   uncertified software source (see plan 004's hardware-adapter seam).
+- **Observed once, 2026-07-13:** for a stretch after the first deploy the
+  Render edge answered most requests `404` + `x-render-routing: no-server`
+  (container absent), interleaved with correct 200s. A manual restart from
+  the dashboard cleared it; a 5-minute watch afterwards was 30/30 green at
+  ~0.1 s. If it recurs, check the service's Logs tab for a boot loop before
+  suspecting the code — the app itself answered correctly whenever it was up.
