@@ -9,5 +9,5 @@
 - Visual language: dark instrument panel, per-arm channel colors
   (amber/cyan/magenta), monospace metrics. Keep it.
 - No localStorage/sessionStorage. React state only.
-- Keep `standalone.html` regenerable: if you change the component, note that
-  standalone.html is a build artifact derived from it.
+- There is no standalone.html anymore — the hosted Pages demo is the
+  no-install path. Don't reintroduce hand-copied variants of the component.

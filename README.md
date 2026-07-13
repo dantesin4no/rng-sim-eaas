@@ -115,7 +115,7 @@ CLAUDE.md                     agent operating manual (conventions, loop rules)
   hooks/                      guard-bash.sh, test-gate.sh (deterministic enforcement)
   skills/                     entropy-validation, drbg-conventions (procedures)
   agents/                     crypto-reviewer, physics-engineer, api-engineer
-plans/                        written plans; 001-004 done, 005 (public demo API) in flight
+plans/                        written plans; 001-006 all done and verified
 contracts/entropy-api.yaml    API source of truth — code follows contract
 packages/entropy-core/        physics + health + conditioner + pool + DRBG (+25 tests)
 packages/validation/          statistical smoke gate for .bin files
@@ -128,13 +128,18 @@ apps/dashboard/               the v2 React UI (Vite) — also the live demo
 gather context → plan (plans/) → act → **verify** → iterate. Verification is
 layered: unit tests on invariants (energy conservation, health trip points,
 DRBG determinism), an end-to-end pipeline test, a statistical smoke gate, and
-hooks that make the test gate unskippable during agent sessions. Open work is
-staged in plans/003 and plans/004 as ready-to-run agent loops.
+hooks that make the test gate unskippable during agent sessions — plus a
+headless-browser e2e that drives the hosted demo's real Connect button
+(`npm run e2e -w dashboard`, plan 006). All six plans to date ran this loop
+to done; the next open directions (hardware entropy adapter, formal
+SP 800-90B assessment) are noted under Honest scope below.
 
 ## Honest scope
 
 Verified in this environment: all 36 tests green; every endpoint exercised;
 128 KB drawn from the live service passed the five-check smoke gate
 (monobit z=0.56, chi-square 246/df 255, Shannon 7.9987 b/B, |scc| 0.0006).
-Still an uncertified software entropy source — see plans/004 for the
-hardware-adapter path and CAVP vector task.
+Still an uncertified software entropy source. Plan 004 delivered the
+hardware-adapter seam (inject any sampler; downstream stages unchanged) and
+nightly CAVP KAT runs — what remains open is plugging in real audited
+hardware and a formal SP 800-90B entropy assessment.
