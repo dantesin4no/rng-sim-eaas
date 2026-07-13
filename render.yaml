@@ -1,0 +1,27 @@
+# Render blueprint — deploys services/entropy-api as the public demo backend
+# for the GitHub Pages dashboard. See plans/005-public-demo-api.md.
+services:
+  - type: web
+    name: rng-sim-entropy-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    # /v1/health reflects RCT/APT trip state, which starts clean, so this is
+    # 200 as soon as the process is up. (It is /v1/random that returns 503
+    # while the pool is still crediting min-entropy.)
+    healthCheckPath: /v1/health
+    envVars:
+      - key: PORT
+        value: "8787"
+      # Must be the bare Pages origin — no path, no trailing slash.
+      - key: CORS_ORIGIN
+        value: https://dantesin4no.github.io
+      # Deliberately tighter than the local defaults (120 / 262144): this is
+      # an unauthenticated public endpoint, and the per-IP token bucket is the
+      # only thing rationing it.
+      - key: RATE_REQ_PER_MIN
+        value: "60"
+      - key: RATE_BYTES_PER_MIN
+        value: "131072"

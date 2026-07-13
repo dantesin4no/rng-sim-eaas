@@ -44,6 +44,13 @@ const RESEED_AFTER = 4096;  // DRBG output bytes between full reseeds
 const subtle =
   typeof crypto !== "undefined" && crypto.subtle ? crypto.subtle : null;
 
+// Where the "Live service" panel points by default. The Pages build injects
+// the deployed API (VITE_API_URL); a local dev server has no such env, so it
+// falls back to the service you'd be running yourself. Connecting stays a
+// manual click either way — the demo must not auto-hammer the API on load.
+const DEFAULT_SVC_URL =
+  import.meta.env?.VITE_API_URL || "http://localhost:8787";
+
 /* ---------------- physics: 3-link Lagrangian ---------------- */
 
 function csum(k) {
@@ -370,7 +377,7 @@ export default function TriplePendulumRNGv2() {
   const [motionOn, setMotionOn] = useState(false);
 
   /* ---- live service mode (plan 003): poll the entropy-api ---- */
-  const [svcUrl, setSvcUrl] = useState("http://localhost:8787");
+  const [svcUrl, setSvcUrl] = useState(DEFAULT_SVC_URL);
   const [svcOn, setSvcOn] = useState(false);
   const [svc, setSvc] = useState(null); // {ok, code, body} | {error}
   const [svcLog, setSvcLog] = useState([]);

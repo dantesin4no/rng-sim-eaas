@@ -21,7 +21,12 @@ jobs:
         with: { node-version: 22 }
       - run: npm install
       - run: npm test
+      # Points the dashboard's "Live service" panel at the deployed API.
+      # Unset -> the build falls back to localhost:8787, i.e. exactly the
+      # local dev behaviour, so an unconfigured fork still builds sanely.
       - run: npm run build -w dashboard
+        env:
+          VITE_API_URL: ${{ vars.API_URL }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with: { path: apps/dashboard/dist }
