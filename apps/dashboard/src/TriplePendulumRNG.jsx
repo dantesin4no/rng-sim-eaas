@@ -388,6 +388,27 @@ export default function TriplePendulumRNGv2() {
   const [svcLog, setSvcLog] = useState([]);
   const svcConfigured = svcUrl.trim() !== "";
 
+  // One-shot liveness probe, before you connect. The streaming loop below stays
+  // behind Connect so idle visitors never put a 1 Hz poll on the service — but a
+  // panel that shows OFFLINE and sends nothing is indistinguishable from a broken
+  // one, and read as broken by two people in a row. A single /v1/health on load
+  // proves the backend is alive and puts one visible request in the network tab;
+  // the sustained load still costs a click.
+  useEffect(() => {
+    if (svcOn || !svcUrl.trim()) return;
+    let alive = true;
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`${svcUrl}/v1/health`, { cache: "no-store" });
+        const body = await r.json();
+        if (alive) setSvc({ ok: r.ok, code: r.status, body });
+      } catch (e) {
+        if (alive) setSvc({ error: String((e && e.message) || e) });
+      }
+    }, 500); // debounce, so editing the URL doesn't probe on every keystroke
+    return () => { alive = false; clearTimeout(t); };
+  }, [svcOn, svcUrl]);
+
   useEffect(() => {
     if (!svcOn || !svcUrl.trim()) return;
     let alive = true;
@@ -1114,9 +1135,9 @@ export default function TriplePendulumRNGv2() {
             title="Live service — @entropy/api"
             right={
               <span style={{ fontFamily: T.mono, fontSize: 11 }}>
-                <Led on={svcOn && svc && svc.ok} warn={(svcOn && svc && !svc.ok && !svc.error) || !svcConfigured} />
-                <span style={{ color: !svcConfigured ? T.bad : !svcOn ? T.dim : svc && svc.ok ? T.ok : T.bad }}>
-                  {!svcConfigured ? "NOT CONFIGURED" : !svcOn ? "OFFLINE" : !svc ? "CONNECTING" : svc.error ? "UNREACHABLE" : svc.ok ? "HEALTHY" : `HTTP ${svc.code}`}
+                <Led on={svc && svc.ok} warn={(svc && !svc.ok && !svc.error) || !svcConfigured} />
+                <span style={{ color: !svcConfigured ? T.bad : !svc ? T.dim : svc.ok ? T.ok : T.bad }}>
+                  {!svcConfigured ? "NOT CONFIGURED" : !svc ? "PROBING" : svc.error ? "UNREACHABLE" : svc.ok ? "HEALTHY" : `HTTP ${svc.code}`}
                 </span>
               </span>
             }
@@ -1144,7 +1165,7 @@ export default function TriplePendulumRNGv2() {
                 @entropy/api, or set the API_URL repository variable and redeploy.
               </div>
             )}
-            {svcOn && svc && svc.body && (
+            {svc && svc.body && (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px 10px", marginTop: 12 }}>
                 <Stat label="Service pool" value={(svc.body.poolCount ?? 0).toLocaleString()} sub={`/ ${svc.body.poolSize ?? "—"} B`} />
                 <Stat label="Min-entropy" value={svc.body.minEntropy ? svc.body.minEntropy.toFixed(2) : "—"} sub="bits/byte" />
@@ -1152,9 +1173,16 @@ export default function TriplePendulumRNGv2() {
                 <Stat label="Reseeds" value={String(svc.body.drbgReseeds ?? 0)} />
               </div>
             )}
-            {svcOn && svc && svc.error && (
+            {svc && svc.error && (
               <div style={{ marginTop: 10, fontFamily: T.mono, fontSize: 11, color: T.bad }}>
-                {svc.error} — is the service running? npm run start:api
+                {svc.error} — is the service reachable? locally: npm run start:api
+              </div>
+            )}
+            {svcConfigured && !svcOn && (
+              <div style={{ marginTop: 10, fontFamily: T.mono, fontSize: 11, color: T.dim, lineHeight: 1.5 }}>
+                Not streaming yet. <strong style={{ color: T.ch2 }}>Connect</strong> to poll the
+                service live, draw coins/D20s/hex through its DRBG, and forward your pointer and
+                keystrokes into its entropy pool.
               </div>
             )}
             {svcOn && (
