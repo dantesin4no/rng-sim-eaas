@@ -1,5 +1,8 @@
 # Triple-Pendulum RNG — v2.0
 
+**▶ [Live demo](https://dantesin4no.github.io/rng-sim-eaas/)** — this app, built
+and deployed by `.github/workflows/pages.yml` on every push to `main`.
+
 A chaotic-dynamics random number generator built on an emulated 3-link pendulum,
 structured after the NIST SP 800-90 entropy-source architecture:
 
