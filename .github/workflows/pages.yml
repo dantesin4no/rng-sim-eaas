@@ -21,9 +21,24 @@ jobs:
         with: { node-version: 22 }
       - run: npm install
       - run: npm test
+      # A hosted build with no API_URL can only ever point at the visitor's own
+      # machine, so the Live service panel ships silently dead — which is exactly
+      # what happened once. On this repo that is a build failure. Forks still
+      # build without the variable; their dashboard renders an explicit
+      # "NOT CONFIGURED" state rather than a broken localhost default.
+      - name: Require API_URL on the canonical deploy
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          if [ -n "$API_URL" ]; then
+            echo "Live service panel -> $API_URL"
+          elif [ "$GITHUB_REPOSITORY" = "dantesin4no/rng-sim-eaas" ]; then
+            echo "::error::API_URL repository variable is not set; the Pages build would ship with no API endpoint. Set it with: gh variable set API_URL --body https://rng-sim-entropy-api.onrender.com"
+            exit 1
+          else
+            echo "::warning::API_URL is not set. The Live service panel will render as NOT CONFIGURED; paste a URL into the panel, or set the API_URL repository variable."
+          fi
       # Points the dashboard's "Live service" panel at the deployed API.
-      # Unset -> the build falls back to localhost:8787, i.e. exactly the
-      # local dev behaviour, so an unconfigured fork still builds sanely.
       - run: npm run build -w dashboard
         env:
           VITE_API_URL: ${{ vars.API_URL }}
