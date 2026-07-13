@@ -44,12 +44,17 @@ const RESEED_AFTER = 4096;  // DRBG output bytes between full reseeds
 const subtle =
   typeof crypto !== "undefined" && crypto.subtle ? crypto.subtle : null;
 
-// Where the "Live service" panel points by default. The Pages build injects
-// the deployed API (VITE_API_URL); a local dev server has no such env, so it
-// falls back to the service you'd be running yourself. Connecting stays a
-// manual click either way — the demo must not auto-hammer the API on load.
+// Where the "Live service" panel points by default. The Pages build injects the
+// deployed API (VITE_API_URL). In dev there is no such env, so we fall back to
+// the service you'd be running yourself. A *production* build with no
+// VITE_API_URL gets an empty string rather than that localhost fallback: a
+// hosted page pointing at the visitor's own machine can never work, and shipping
+// it silently is what broke the Pages demo once already. Empty renders an
+// explicit "not configured" state instead. Connecting stays a manual click
+// either way — the demo must not auto-hammer the API on load.
 const DEFAULT_SVC_URL =
-  import.meta.env?.VITE_API_URL || "http://localhost:8787";
+  import.meta.env?.VITE_API_URL ||
+  (import.meta.env?.DEV ? "http://localhost:8787" : "");
 
 /* ---------------- physics: 3-link Lagrangian ---------------- */
 
@@ -381,9 +386,10 @@ export default function TriplePendulumRNGv2() {
   const [svcOn, setSvcOn] = useState(false);
   const [svc, setSvc] = useState(null); // {ok, code, body} | {error}
   const [svcLog, setSvcLog] = useState([]);
+  const svcConfigured = svcUrl.trim() !== "";
 
   useEffect(() => {
-    if (!svcOn) return;
+    if (!svcOn || !svcUrl.trim()) return;
     let alive = true;
     const poll = async () => {
       try {
@@ -1108,9 +1114,9 @@ export default function TriplePendulumRNGv2() {
             title="Live service — @entropy/api"
             right={
               <span style={{ fontFamily: T.mono, fontSize: 11 }}>
-                <Led on={svcOn && svc && svc.ok} warn={svcOn && svc && !svc.ok && !svc.error} />
-                <span style={{ color: !svcOn ? T.dim : svc && svc.ok ? T.ok : T.bad }}>
-                  {!svcOn ? "OFFLINE" : !svc ? "CONNECTING" : svc.error ? "UNREACHABLE" : svc.ok ? "HEALTHY" : `HTTP ${svc.code}`}
+                <Led on={svcOn && svc && svc.ok} warn={(svcOn && svc && !svc.ok && !svc.error) || !svcConfigured} />
+                <span style={{ color: !svcConfigured ? T.bad : !svcOn ? T.dim : svc && svc.ok ? T.ok : T.bad }}>
+                  {!svcConfigured ? "NOT CONFIGURED" : !svcOn ? "OFFLINE" : !svc ? "CONNECTING" : svc.error ? "UNREACHABLE" : svc.ok ? "HEALTHY" : `HTTP ${svc.code}`}
                 </span>
               </span>
             }
@@ -1120,14 +1126,24 @@ export default function TriplePendulumRNGv2() {
                 value={svcUrl}
                 onChange={(e) => setSvcUrl(e.target.value)}
                 disabled={svcOn}
+                placeholder="https://your-entropy-api.example.com"
                 style={{
                   flex: 1, minWidth: 180, background: "rgba(255,255,255,0.04)",
-                  border: `1px solid ${T.panelEdge}`, borderRadius: 7, color: T.ink,
+                  border: `1px solid ${svcConfigured ? T.panelEdge : T.bad}`, borderRadius: 7, color: T.ink,
                   fontFamily: T.mono, fontSize: 12, padding: "7px 10px", outline: "none",
                 }}
               />
-              <Btn accent onClick={() => setSvcOn((v) => !v)}>{svcOn ? "Disconnect" : "Connect"}</Btn>
+              <Btn accent disabled={!svcConfigured} onClick={() => setSvcOn((v) => !v)}>
+                {svcOn ? "Disconnect" : "Connect"}
+              </Btn>
             </div>
+            {!svcConfigured && (
+              <div style={{ marginTop: 10, fontFamily: T.mono, fontSize: 11, color: T.bad, lineHeight: 1.5 }}>
+                This build shipped without an API endpoint (VITE_API_URL was unset
+                at build time). Paste a URL above to point the panel at a running
+                @entropy/api, or set the API_URL repository variable and redeploy.
+              </div>
+            )}
             {svcOn && svc && svc.body && (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px 10px", marginTop: 12 }}>
                 <Stat label="Service pool" value={(svc.body.poolCount ?? 0).toLocaleString()} sub={`/ ${svc.body.poolSize ?? "—"} B`} />
